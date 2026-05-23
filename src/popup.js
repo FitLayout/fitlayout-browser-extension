@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
 
-    const saveCheckbox = document.querySelector('.material-checkbox');
+    const saveCheckbox = document.getElementById('saveCheck');
     const hostnameInput = document.getElementById('hostname');
     const uidInput = document.getElementById('UID');
     const comboBox = document.querySelector('.profile');
@@ -103,12 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (message.action === "displaySpinner") {
-            document.querySelector('.mdl-progress').classList.remove('hidden');
+            document.getElementById('p2').classList.remove('hidden');
         }
-        document.querySelector('.mdl-progress').classList.remove('hidden');
+        document.getElementById('p2').classList.remove('hidden');
 
         if (message.action === "done") {
-            document.querySelector('.mdl-progress').classList.add('hidden');
+            document.getElementById('p2').classList.add('hidden');
         }
     });
 

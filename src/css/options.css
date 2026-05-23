@@ -1,27 +1,115 @@
-.jumbotron {
-	margin: 5em 0 5em 0;
+* {
+    box-sizing: border-box;
 }
-.jumbotron h1 {
-	font-size: 500%;
-	font-variant: small-caps;
+
+body {
+    font-family: Helvetica, Ubuntu, Arial, sans-serif;
+    font-size: 14px;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    color: #333;
+}
+
+header {
+    background: #37474f;
+    color: #fff;
+    padding: 16px 24px;
     text-align: center;
 }
-.jumbotron a {
-	text-decoration: none;
+
+header h1 {
+    margin: 0;
+    font-size: 2em;
+    font-variant: small-caps;
+    font-weight: 500;
 }
 
 .settings {
-    max-width: 80em;
-    margin: auto;
+    max-width: 600px;
+    margin: 24px auto;
+    padding: 0 16px;
 }
 
 .settings h2 {
-    font-size: 1.2em;
+    font-size: 1.1em;
     font-weight: bold;
-    margin: 0;
+    margin: 0 0 12px;
 }
 
 .profiles {
-    padding: 1em;
-    border: 2px solid #e0e0e0;
+    padding: 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.field-label {
+    font-size: 11px;
+    color: #999;
+}
+
+.select-input {
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 7px 8px;
+    font-size: 14px;
+    background: #fff;
+    color: #333;
+    outline: none;
+    font-family: inherit;
+}
+
+.select-input:focus {
+    border-color: #3f51b5;
+}
+
+.button-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    background: #e0e0e0;
+    color: #333;
+    transition: background 0.15s;
+    font-family: inherit;
+}
+
+.btn:hover {
+    background: #bdbdbd;
+}
+
+.btn-accent {
+    background: #ff9800;
+    color: #fff;
+}
+
+.btn-accent:hover {
+    background: #e68900;
+}
+
+.btn-danger {
+    background: #f44336;
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: #d32f2f;
 }

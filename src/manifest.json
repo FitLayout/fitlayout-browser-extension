@@ -54,7 +54,6 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "material.min.js",
                 "contentScript.js"
             ],
             "matches": [
