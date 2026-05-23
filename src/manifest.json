@@ -47,6 +47,11 @@
             ],
             "js": [
                 "js/browser-polyfill.min.js",
+                "js/jfont-checker.js",
+                "js/export.js",
+                "js/fonts.js",
+                "js/jsonld.js",
+                "js/lines.js",
                 "contentScript.js"
             ]
         }
