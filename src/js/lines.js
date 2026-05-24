@@ -1,10 +1,13 @@
 /**
  * FitLayout puppetteer backend.
- * (c) 2020-2021 Radek Burget <burgetr@fit.vutbr.cz>
+ * (c) 2020-2026 Radek Burget <burgetr@fit.vutbr.cz>
  * 
  * lines.js
  * Text line detection in the target DOM.
  */
+
+// Set to true in browser environment where the viewport is limited so that we have to scroll to detect lines.
+var fitlayoutScrollEnabled = false;
 
 /**
  * Scans current DOM document and makes the following changes in the body:
@@ -149,10 +152,35 @@
 	markXPaths(document.body, '//body[1]');
 	unmix(document.body);
 	var xxs = Array.from(document.getElementsByTagName(TEXT_CONT));
-	for (var i = 0; i < xxs.length; i++) {
-		var n = createLines(xxs[i]);
-		if (n === 0) {
-			console.log(xxs[i]);
+
+	if (fitlayoutScrollEnabled) {
+		// Capture page-absolute Y for every element while scroll is at 0.
+		// getBoundingClientRect().top == page-absolute Y when scrollY === 0,
+		// which is guaranteed by the caller (contentScript.js scrolls to top first).
+		var xxWithY = xxs.map(xx => ({ xx, pageY: xx.getBoundingClientRect().top }));
+		xxWithY.sort((a, b) => a.pageY - b.pageY);
+
+		var viewportHeight = window.innerHeight;
+		var i = 0;
+		while (i < xxWithY.length) {
+			var bandStart = Math.max(0, Math.floor(xxWithY[i].pageY / viewportHeight) * viewportHeight);
+			var bandEnd = bandStart + viewportHeight;
+			window.scrollTo({ top: bandStart, behavior: 'instant' });
+			while (i < xxWithY.length && xxWithY[i].pageY < bandEnd) {
+				var n = createLines(xxWithY[i].xx);
+				if (n === 0) {
+					console.log(xxWithY[i].xx);
+				}
+				i++;
+			}
+		}
+		window.scrollTo({ top: 0, behavior: 'instant' });
+	} else {
+		for (var i = 0; i < xxs.length; i++) {
+			var n = createLines(xxs[i]);
+			if (n === 0) {
+				console.log(xxs[i]);
+			}
 		}
 	}
 }

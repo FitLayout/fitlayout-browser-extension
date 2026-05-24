@@ -20,6 +20,7 @@ browser.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         async function evaluatePage() {
 
             const EVAL_TIMEOUT = 60; // in seconds
+            fitlayoutScrollEnabled = true;
             fitlayoutDetectLines();
             let pageTask = fitlayoutExportBoxes();
 
