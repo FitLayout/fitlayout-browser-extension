@@ -128,9 +128,13 @@ var fitlayoutScrollEnabled = false;
 		// element (overflow:hidden clips the content from hit-testing), in which
 		// case splitTextByLines falls back to text.length.
 		let endOffset = null;
-		if (firstClippedIdx !== -1) {
-			const fc = allRects[firstClippedIdx];
-			endOffset = getCaretOffsetInElement(xx, fc.x + 1, fc.y + fc.height / 2);
+		if (firstClippedIdx !== -1 && rects.length > 0) {
+			// Probe at the right edge of the last visible rect. That coordinate is
+			// within the rendered area so caretPositionFromPoint reliably hits our
+			// text node; at a line's right edge the caret lands just after the last
+			// character, which equals the start of the first invisible line.
+			const lastVisible = rects[rects.length - 1];
+			endOffset = getCaretOffsetInElement(xx, lastVisible.right - 1, lastVisible.y + lastVisible.height / 2);
 		}
 		if (rects.length > 1) {
 			const parent = xx.parentElement;
