@@ -39,14 +39,102 @@ var fitlayoutScrollEnabled = false;
 	}
 
 	/**
+	 * Returns the intersection of the bounding rects of all overflow:hidden/clip
+	 * ancestors, or null if no clipping ancestor exists.
+	 * All coordinates are viewport-relative (consistent with getClientRects).
+	 */
+	function getClipRect(element) {
+		var clip = null;
+		var ancestor = element.parentElement;
+		while (ancestor && ancestor !== document.documentElement) {
+			var style = window.getComputedStyle(ancestor);
+			var clipInX = style.overflowX === 'hidden' || style.overflowX === 'clip';
+			var clipInY = style.overflowY === 'hidden' || style.overflowY === 'clip';
+			if (clipInX || clipInY) {
+				var r = ancestor.getBoundingClientRect();
+				if (clip === null) {
+					clip = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+				} else {
+					if (clipInX) {
+						clip.left  = Math.max(clip.left,  r.left);
+						clip.right = Math.min(clip.right, r.right);
+					}
+					if (clipInY) {
+						clip.top    = Math.max(clip.top,    r.top);
+						clip.bottom = Math.min(clip.bottom, r.bottom);
+					}
+				}
+			}
+			ancestor = ancestor.parentElement;
+		}
+		return clip;
+	}
+
+	function isRectVisible(rect, clip) {
+		if (clip === null) return true;
+		return rect.right  > clip.left  &&
+		       rect.left   < clip.right &&
+		       rect.bottom > clip.top   &&
+		       rect.top    < clip.bottom;
+	}
+
+	function getCaretOffset(x, y) {
+		if (document.caretPositionFromPoint) {
+			// W3C standard (Firefox, Chrome 128+)
+			const pos = document.caretPositionFromPoint(x, y);
+			return pos ? pos.offset : null;
+		} else if (document.caretRangeFromPoint) {
+			// Non-standard fallback (Chrome/Safari)
+			const range = document.caretRangeFromPoint(x, y);
+			return range ? range.startOffset : null;
+		}
+		return null;
+	}
+
+	/**
+	 * Like getCaretOffset but returns null if the caret position belongs to a
+	 * different node than element's text node. This prevents using a garbage
+	 * offset from an unrelated element when the target coordinates are outside
+	 * an overflow:hidden boundary (the clipped content is not hit-testable there).
+	 */
+	function getCaretOffsetInElement(element, x, y) {
+		const textNode = element.firstChild;
+		if (document.caretPositionFromPoint) {
+			const pos = document.caretPositionFromPoint(x, y);
+			if (pos && pos.offsetNode === textNode)
+				return pos.offset;
+			return null;
+		} else if (document.caretRangeFromPoint) {
+			const range = document.caretRangeFromPoint(x, y);
+			if (range && range.startContainer === textNode)
+				return range.startOffset;
+			return null;
+		}
+		return null;
+	}
+
+	/**
 	 * Finds lines in a given XX element and marks them with separate elements.
 	 * @param {Element} xx the XX element to be processed.
 	 */
 	function createLines(xx) {
-		let rects = xx.getClientRects();
+		const clip = getClipRect(xx);
+		const allRects = Array.from(xx.getClientRects());
+		const firstClippedIdx = allRects.findIndex(r => !isRectVisible(r, clip));
+		const rects = firstClippedIdx === -1 ? allRects : allRects.slice(0, firstClippedIdx);
+		// Compute the text offset where the first clipped line begins so the last
+		// visible XL element is truncated there rather than extending to text.length.
+		// getCaretOffsetInElement returns null if the coordinates hit a different
+		// element (overflow:hidden clips the content from hit-testing), in which
+		// case splitTextByLines falls back to text.length.
+		let endOffset = null;
+		if (firstClippedIdx !== -1) {
+			const fc = allRects[firstClippedIdx];
+			endOffset = getCaretOffsetInElement(xx, fc.x + 1, fc.y + fc.height / 2);
+		}
 		if (rects.length > 1) {
 			const parent = xx.parentElement;
-			lines = splitTextByLines(xx, xx.textContent, rects);
+			lines = splitTextByLines(xx, xx.textContent, rects, endOffset);
 			xx.innerText = '';
 			for (var line of lines) {
 				parent.insertBefore(line, xx);
@@ -64,22 +152,10 @@ var fitlayoutScrollEnabled = false;
 	 * @param {Element} parent the parent element of the text node
 	 * @param {string} text the text content to be split
 	 * @param {*} rects element client rectangles to be used for splitting
+	 * @param {number|null} endOffset character offset to use as the end of the last
+	 *        line; pass null to use the full text length (no clipping)
 	 */
-	function splitTextByLines(parent, text, rects) {
-		
-		function getCaretOffset(x, y) {
-			if (document.caretPositionFromPoint) {
-				// W3C standard (Firefox, Chrome 128+)
-				const pos = document.caretPositionFromPoint(x, y);
-				return pos ? pos.offset : null;
-			} else if (document.caretRangeFromPoint) {
-				// Non-standard fallback (Chrome/Safari)
-				const range = document.caretRangeFromPoint(x, y);
-				return range ? range.startOffset : null;
-			}
-			return null;
-		}
-
+	function splitTextByLines(parent, text, rects, endOffset) {
 		var breaks = [];
 		var lastY = -Infinity;
 		for (var i = 0; i < rects.length; i++) {
@@ -90,7 +166,11 @@ var fitlayoutScrollEnabled = false;
 				lastY = rect.y;
 			}
 		}
-		breaks.push(text.length);
+		// endOffset must be strictly greater than the last recorded break; otherwise
+		// text.substring(lastBreak, endOffset) would produce empty or swapped content
+		// (JS substring swaps args when end < start).
+		const lastBreak = breaks.length > 0 ? breaks[breaks.length - 1] : 0;
+		breaks.push(endOffset !== null && endOffset > lastBreak ? endOffset : text.length);
 		//split to elements
 		var lines = [];
 		for (var i = 0; i < breaks.length - 1; i++) {
