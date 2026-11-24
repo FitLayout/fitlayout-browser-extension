@@ -245,10 +245,11 @@ var fitlayoutScrollEnabled = false;
 		xxWithY.sort((a, b) => a.pageY - b.pageY);
 
 		var viewportHeight = window.innerHeight;
+		var BAND_BOTTOM_MARGIN = 100; // leave room so elements near the batch tail have their lower rects in view
 		var i = 0;
 		while (i < xxWithY.length) {
-			var bandStart = Math.max(0, Math.floor(xxWithY[i].pageY / viewportHeight) * viewportHeight);
-			var bandEnd = bandStart + viewportHeight;
+			var bandStart = Math.max(0, xxWithY[i].pageY);
+			var bandEnd = bandStart + viewportHeight - BAND_BOTTOM_MARGIN;
 			window.scrollTo({ top: bandStart, behavior: 'instant' });
 			while (i < xxWithY.length && xxWithY[i].pageY < bandEnd) {
 				var n = createLines(xxWithY[i].xx);
